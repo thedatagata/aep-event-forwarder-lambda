@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  AepCredentialsSecretName:
+    Type: String
+    Default: "aep-event-forwarder-creds"
+    Description: "Name of the secret containing AEP credentials"
+  AccessTokenSecretName:
+    Type: String
+    Default: "adobe-access-token"
+    Description: "Name of the secret that will store the access token"
+
+Resources:
+  AEPConnectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: app.lambda_handler
+      Runtime: python3.11
+      Timeout: 30
+      MemorySize: 256
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          AEP_CREDENTIALS_SECRET_NAME: !Ref AepCredentialsSecretName
+          ACCESS_TOKEN_SECRET_NAME: !Ref AccessTokenSecretName
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /connect-event
+            Method: post
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - 'secretsmanager:GetSecretValue'
+                - 'secretsmanager:PutSecretValue'
+                - 'secretsmanager:UpdateSecret'
+                - 'secretsmanager:CreateSecret'
+              Resource: 
+                - !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${AepCredentialsSecretName}*'
+                - !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${AccessTokenSecretName}*'
+
+Outputs:
+  AEPConnectFunction:
+    Description: "Lambda Function ARN"
+    Value: !GetAtt AEPConnectFunction.Arn
+  AEPConnectApi:
+    Description: "API Gateway endpoint URL for Prod stage"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/connect-event/"
