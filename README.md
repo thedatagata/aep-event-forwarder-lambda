@@ -2,19 +2,236 @@
 
 This Lambda function forwards events from AWS Connect to Adobe Experience Platform with automatic token management through AWS Secrets Manager.
 
-## Features
+## Quick Start Guide for Non-Developers
 
-- Uses AWS Secrets Manager for secure credential storage
-- Automatic token management with refresh handling
-- Automatically retries requests when tokens expire
-- Can be tested locally with AWS SAM
-- Easily deployed with VS Code AWS Toolkit
+This guide provides step-by-step instructions for setting up the necessary tools and deploying the AWS Lambda function, even if you have minimal coding experience.
 
-## Setup
+## Part 1: Install Required Tools
 
-### 1. Required AWS IAM Permissions
+### 1. Install AWS CLI
 
-Before proceeding, ensure your AWS user has the following permissions:
+The AWS Command Line Interface (CLI) allows you to interact with AWS services from the command line.
+
+**Windows:**
+1. Download the MSI installer from [AWS CLI website](https://aws.amazon.com/cli/)
+2. Run the downloaded MSI installer and follow the on-screen instructions
+3. Open Command Prompt to verify installation:
+   ```
+   aws --version
+   ```
+
+**macOS:**
+1. Install via Homebrew (recommended):
+   ```
+   brew install awscli
+   ```
+2. Or download the installer from the [AWS CLI website](https://aws.amazon.com/cli/)
+3. Open Terminal to verify installation:
+   ```
+   aws --version
+   ```
+
+**Linux:**
+1. Install using your package manager:
+   ```
+   # For Ubuntu/Debian
+   sudo apt-get update
+   sudo apt-get install awscli
+
+   # For Amazon Linux/RHEL
+   sudo yum install awscli
+   ```
+2. Verify installation:
+   ```
+   aws --version
+   ```
+
+### 2. Configure AWS Credentials
+
+After installing the AWS CLI, you need to configure it with your AWS credentials:
+
+1. Get your AWS Access Key ID and Secret Access Key from your AWS administrator or the AWS Console
+2. Open Terminal (macOS/Linux) or Command Prompt (Windows)
+3. Run:
+   ```
+   aws configure
+   ```
+4. Enter your AWS Access Key ID, Secret Access Key, default region (e.g., us-east-1), and preferred output format (json)
+
+Alternatively, you can create a named profile:
+```
+aws configure --profile your-profile-name
+```
+
+### 3. Install AWS SAM CLI
+
+The AWS Serverless Application Model (SAM) CLI makes it easier to build and deploy serverless applications.
+
+**Windows:**
+1. Install Docker Desktop first from [Docker website](https://www.docker.com/products/docker-desktop)
+2. Download the SAM CLI installer from [GitHub releases](https://github.com/aws/aws-sam-cli/releases)
+3. Run the installer and follow the on-screen instructions
+4. Open Command Prompt to verify installation:
+   ```
+   sam --version
+   ```
+
+**macOS:**
+1. Install Docker Desktop first from [Docker website](https://www.docker.com/products/docker-desktop)
+2. Install SAM CLI via Homebrew:
+   ```
+   brew tap aws/tap
+   brew install aws-sam-cli
+   ```
+3. Verify installation:
+   ```
+   sam --version
+   ```
+
+**Linux:**
+1. Install Docker first:
+   ```
+   # For Ubuntu/Debian
+   sudo apt-get update
+   sudo apt-get install docker.io
+   sudo systemctl start docker
+   sudo systemctl enable docker
+   ```
+2. Download and install SAM CLI:
+   ```
+   wget https://github.com/aws/aws-sam-cli/releases/latest/download/aws-sam-cli-linux-x86_64.zip
+   unzip aws-sam-cli-linux-x86_64.zip -d sam-installation
+   sudo ./sam-installation/install
+   ```
+3. Verify installation:
+   ```
+   sam --version
+   ```
+
+### 4. Install VS Code and AWS Toolkit Extension
+
+Visual Studio Code (VS Code) is a free, lightweight code editor.
+
+1. Download and install VS Code from [Visual Studio Code website](https://code.visualstudio.com/)
+2. Open VS Code
+3. Click on the Extensions icon in the sidebar (or press Ctrl+Shift+X)
+4. Search for "AWS Toolkit"
+5. Click "Install" on the AWS Toolkit extension by Amazon
+
+### 5. Install Python
+
+This project requires Python 3.9 or newer.
+
+**Windows:**
+1. Download the Python installer from [Python.org](https://www.python.org/downloads/)
+2. Run the installer, making sure to check "Add Python to PATH"
+3. Open Command Prompt to verify installation:
+   ```
+   python --version
+   ```
+
+**macOS:**
+1. Install via Homebrew:
+   ```
+   brew install python
+   ```
+2. Verify installation:
+   ```
+   python3 --version
+   ```
+
+**Linux:**
+1. Install using your package manager:
+   ```
+   # For Ubuntu/Debian
+   sudo apt-get update
+   sudo apt-get install python3 python3-pip
+   ```
+2. Verify installation:
+   ```
+   python3 --version
+   ```
+
+## Part 2: Setting Up the Project
+
+### 1. Download the Project
+
+1. Download this project as a ZIP file or clone it if you're familiar with Git
+2. Extract the ZIP file to a location on your computer
+3. Open VS Code
+4. Click on "File" > "Open Folder" and select the extracted project folder
+
+### 2. Set Up Python Environment
+
+1. Open a Terminal in VS Code by clicking on "Terminal" > "New Terminal"
+2. Create a virtual environment:
+   ```
+   # Windows
+   python -m venv venv
+   
+   # macOS/Linux
+   python3 -m venv venv
+   ```
+3. Activate the virtual environment:
+   ```
+   # Windows
+   venv\Scripts\activate
+   
+   # macOS/Linux
+   source venv/bin/activate
+   ```
+4. Install dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
+
+### 3. Store Credentials in AWS Secrets Manager
+
+Create a secret in AWS Secrets Manager with your Adobe Experience Platform credentials:
+
+1. Open the [AWS Secrets Manager Console](https://console.aws.amazon.com/secretsmanager/)
+2. Click "Store a new secret"
+3. Select "Other type of secret"
+4. Enter your Adobe credentials in JSON format:
+   ```json
+   {
+     "AEP_ENDPOINT": "https://dcs.adobedc.net/collection/your-collection-id",
+     "IMS_ENDPOINT": "https://ims-na1.adobelogin.com/ims/token/v2",
+     "CLIENT_ID": "your-client-id",
+     "CLIENT_SECRET": "your-client-secret",
+     "IMS_ORG": "your-org-id@AdobeOrg",
+     "TECHNICAL_ACCOUNT_ID": "your-technical-account-id",
+     "SCOPES": "openid,AdobeID,read_organizations,additional_info.projectedProductContext,session",
+     "FLOW_ID": "your-flow-id",
+     "SANDBOX_NAME": "your-sandbox-name"
+   }
+   ```
+5. Click "Next"
+6. Enter "aep-event-forwarder-creds" as the secret name
+7. Complete the wizard to create the secret
+
+Alternatively, you can use the AWS CLI:
+
+```bash
+aws secretsmanager create-secret \
+  --name aep-event-forwarder-creds \
+  --secret-string '{
+    "AEP_ENDPOINT": "https://dcs.adobedc.net/collection/your-collection-id",
+    "IMS_ENDPOINT": "https://ims-na1.adobelogin.com/ims/token/v2",
+    "CLIENT_ID": "your-client-id",
+    "CLIENT_SECRET": "your-client-secret",
+    "IMS_ORG": "your-org-id@AdobeOrg",
+    "TECHNICAL_ACCOUNT_ID": "your-technical-account-id",
+    "SCOPES": "openid,AdobeID,read_organizations,additional_info.projectedProductContext,session",
+    "FLOW_ID": "your-flow-id",
+    "SANDBOX_NAME": "your-sandbox-name"
+  }' \
+  --profile your-aws-profile
+```
+
+## Part 3: Required AWS IAM Permissions
+
+Before proceeding with deployment, ensure your AWS user has the following permissions:
 
 ```json
 {
@@ -55,69 +272,38 @@ Before proceeding, ensure your AWS user has the following permissions:
 }
 ```
 
+Ask your AWS administrator to attach these permissions to your IAM user or role.
+
 ⚠️ **Permission Issues Note:** If you encounter `ROLLBACK_COMPLETE` states or IAM permission errors during deployment, ensure your AWS user has all the permissions listed above, particularly `iam:CreateRole` and `iam:TagRole` which are commonly missing.
 
-### 2. Store Credentials in Secrets Manager
+## Part 4: Local Testing
 
-Create a secret in AWS Secrets Manager with your Adobe Experience Platform credentials:
+### 1. Start Docker
 
-```bash
-aws secretsmanager create-secret \
-  --name aep-event-forwarder-creds \
-  --secret-string '{
-    "AEP_ENDPOINT": "https://dcs.adobedc.net/collection/your-collection-id",
-    "IMS_ENDPOINT": "https://ims-na1.adobelogin.com/ims/token/v2",
-    "CLIENT_ID": "your-client-id",
-    "CLIENT_SECRET": "your-client-secret",
-    "IMS_ORG": "your-org-id@AdobeOrg",
-    "TECHNICAL_ACCOUNT_ID": "your-technical-account-id",
-    "SCOPES": "openid,AdobeID,read_organizations,additional_info.projectedProductContext,session",
-    "FLOW_ID": "your-flow-id",
-    "SANDBOX_NAME": "your-sandbox-name"
-  }' \
-  --profile your-aws-profile
-```
+Make sure Docker Desktop is running on your computer.
 
-## Local Testing
+### 2. Test with SAM CLI
 
-### 1. Install Prerequisites
-
-- [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html)
-- [Docker](https://www.docker.com/products/docker-desktop)
-- [VS Code with AWS Toolkit extension](https://docs.aws.amazon.com/toolkit-for-vscode/latest/userguide/setup-toolkit.html)
-
-### 2. Configure AWS Credentials
-
-Set up your AWS credentials either by:
-
-- Configuring a profile: `aws configure --profile your-profile-name`
-- Setting environment variables:
-  ```bash
-  export AWS_ACCESS_KEY_ID=your-access-key
-  export AWS_SECRET_ACCESS_KEY=your-secret-key
-  export AWS_REGION=your-region
-  ```
-
-### 3. Test with SAM CLI
+In VS Code's terminal:
 
 ```bash
 # Build the application
 sam build
 
-# Start the local API
+# Start the local API (using a profile if configured)
 sam local start-api --profile your-aws-profile
 
 # Or using environment variables
 AWS_ACCESS_KEY_ID=your-key AWS_SECRET_ACCESS_KEY=your-secret AWS_REGION=your-region sam local start-api
 ```
 
-### 4. Test with Postman
+### 3. Test with Postman
 
-1. Send a POST request to http://127.0.0.1:3000/connect-event
-2. Set Content-Type header to application/json
-3. Include a JSON payload in the body
-
-Example payload:
+1. Download and install [Postman](https://www.postman.com/downloads/)
+2. Create a new POST request to http://127.0.0.1:3000/connect-event
+3. Add a header: Content-Type = application/json
+4. In the Body tab, select "raw" and "JSON"
+5. Enter a test payload:
 ```json
 {
   "order_id": "XU7L020O9M59VQ4S98",
@@ -128,20 +314,13 @@ Example payload:
   "customer_name": "John Doe"
 }
 ```
+6. Click "Send" to test the function
 
-## Deployment with VS Code AWS Toolkit
+## Part 5: Deployment with VS Code AWS Toolkit
 
-### 1. Open Project in VS Code
+### Deploy via AWS Toolkit Extension
 
-Open the project folder in VS Code:
-
-```bash
-code .
-```
-
-### A. Deploy via AWS Toolkit Extension (Recommended)
-
-1. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS) to open the Command Palette
+1. In VS Code, press `Ctrl+Shift+P` (Windows/Linux) or `Cmd+Shift+P` (macOS) to open the Command Palette
 2. Type "AWS: Connect to AWS" and select it
 3. Choose your AWS profile
 4. Type "AWS: Deploy SAM Application" and select it
@@ -164,29 +343,21 @@ aws cloudformation wait stack-delete-complete --stack-name your-stack-name
 
 Then try the deployment again with a new stack name.
 
-### B. Deploy via SAM CLI
-
-Alternatively, you can deploy using the SAM CLI:
-
-```bash
-sam build
-sam deploy --guided --profile your-profile
-```
-
-### 4. Verify Deployment
+### Verifying Deployment
 
 Once deployed, you'll see an output for the API Gateway endpoint URL. Test it with Postman:
 
-1. Send a POST request to the endpoint (e.g., https://xmzbly0q45.execute-api.us-east-1.amazonaws.com/Prod/connect-event/)
-2. Set Content-Type header to application/json
-3. Include a JSON payload in the body
+1. Create a new POST request to the provided endpoint URL
+2. Add a header: Content-Type = application/json 
+3. Add the same JSON payload used for local testing
+4. Click "Send" to test the deployed function
 
 ## Troubleshooting
 
 ### Permission Issues
 
 - **Common Error**: "User is not authorized to perform iam:CreateRole"
-  - **Solution**: Add IAM permissions listed in the "Required AWS IAM Permissions" section
+  - **Solution**: Ask your AWS administrator to add the IAM permissions listed in Part 3
   
 - **ROLLBACK_COMPLETE State**: If your stack is in this state, delete it using the AWS CLI or console before retrying deployment.
 
@@ -195,7 +366,7 @@ Once deployed, you'll see an output for the API Gateway endpoint URL. Test it wi
 ### Secret Access Issues
 
 - **Error**: "Secrets Manager can't find the specified secret"
-  - **Solution**: Make sure you've created the secret with the exact name used in your template parameters.
+  - **Solution**: Make sure you've created the secret with the exact name "aep-event-forwarder-creds".
 
 - **Error**: "User is not authorized to perform secretsmanager:GetSecretValue"
   - **Solution**: Ensure your AWS user and Lambda execution role have Secrets Manager permissions.
@@ -214,6 +385,14 @@ Once deployed, you'll see an output for the API Gateway endpoint URL. Test it wi
 4. Event is forwarded to Adobe Experience Platform
 5. If token expires, a new one is automatically generated and the request is retried
 6. Lambda returns the AEP response to the caller
+
+## Features
+
+- Uses AWS Secrets Manager for secure credential storage
+- Automatic token management with refresh handling
+- Automatically retries requests when tokens expire
+- Can be tested locally with AWS SAM
+- Easily deployed with VS Code AWS Toolkit
 
 ## Customizing
 
