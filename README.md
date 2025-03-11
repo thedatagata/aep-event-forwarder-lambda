@@ -8,6 +8,21 @@ This guide provides step-by-step instructions for setting up the necessary tools
 
 ## Part 1: Install Required Tools
 
+### Installing Python
+
+1. Brew install pyenv - *brew install pyenv*
+2. Validate Installation - *pyenv --version*
+3. Find available python versions - *pyenv install -l*
+4. Install python3.11.3 - *pyenv install 3.11.3*
+5. Install python3.9.6 - *pyenv install 3.9.6*
+6. Set global version of python to 3.9.6 - *pyenv global 3.9.6*
+7. Create a virtualenv for dev w/ 3.11.3 - *pyenv virtualenv 3.11.3 aws-dev*
+8. Create a folder where you want to develop, navigate to that folder, and activate virtualenv - *pyenv activate aws-dev*
+9. Verify correct pip - *pyenv which pip*
+10. Clone the repo, navigate inside the project, and run - *pip install -r requirements.txt*
+11. ???
+12. profit
+
 ### 1. Install AWS CLI
 
 The AWS Command Line Interface (CLI) allows you to interact with AWS services from the command line.
